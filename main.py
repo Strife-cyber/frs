@@ -25,18 +25,24 @@ def launch_signal():
     CaptureInterface().run()
 
 
+def display_help():
+    """Display the available commands."""
+    print("Available modes:")
+    print("- 'admin': Launch the Admin Login Page")
+    print("- 'scan': Start face scanning")
+    print("- 'api': Start the API server")
+    print("- 'signal': Signal entry or departure")
+    print("Use partial matches (e.g., 'ad', 'sc', 'ap', 'si') for convenience.")
+
+
 def main():
     """
     Entry point for the application.
     Allows switching between Admin Login, Face Scanning, API server, or signaling entry/departure.
     """
-    print("Available modes (separate multiple modes with commas):")
-    print("- 'admin': Launch the Admin Login Page")
-    print("- 'scan': Start face scanning")
-    print("- 'api': Start the API server")
-    print("- 'signal': Signal entry or departure")
+    display_help()
 
-    commands = input("Enter mode(s): ").strip().lower().split(",")
+    commands = input("Enter mode(s) (or 'help' for available commands): ").strip().lower().split(",")
 
     threads = []
 
@@ -50,13 +56,23 @@ def main():
 
     for command in commands:
         command = command.strip()
-        if command in command_map:
-            # Create a thread for the selected command
-            thread = threading.Thread(target=command_map[command])
+
+        # Check if 'help' command is entered
+        if command == "help":
+            display_help()
+            continue
+
+        # Find a matching command
+        matches = [key for key in command_map.keys() if key.startswith(command)]
+        if len(matches) == 1:  # Exact or partial match
+            matched_command = matches[0]
+            thread = threading.Thread(target=command_map[matched_command])
             thread.start()
             threads.append(thread)
-        else:
-            print(f"Invalid mode: {command}. Skipping.")
+        elif len(matches) > 1:  # Ambiguous partial match
+            print(f"Ambiguous command '{command}'. Matches: {', '.join(matches)}")
+        else:  # No match
+            print(f"Invalid mode: '{command}'. Use 'help' to see available commands.")
 
     # Optional: Join threads to wait for their completion (or omit to run indefinitely)
     for thread in threads:
