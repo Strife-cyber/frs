@@ -3,29 +3,18 @@ from ui.left_panel import LeftPanel
 from ui.right_panel import RightPanel
 from ui.styles import BACKGROUND_COLOR
 
-ctk.set_appearance_mode("dark")
-ctk.set_default_color_theme("dark-blue")
 
-
-class ManagementBoard(ctk.CTk):
-    def __init__(self):
-        super().__init__()
-        self.title("Management Board")
-        self.geometry("1000x700")
-        self.configure(bg=BACKGROUND_COLOR)
-        self.resizable(False, False)
+class ManagementBoard(ctk.CTkFrame):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.parent = parent
 
         # Initialize panels
         self.left_panel = LeftPanel(self)
         self.right_panel = RightPanel(self)
 
     def on_close(self):
-        """Handle window close event."""
+        """Handle cleanup actions before hiding the management board."""
         self.right_panel.stop_real_time_updates()  # Stop the background thread
-        self.destroy()  # Close the window
-
-
-if __name__ == "__main__":
-    app = ManagementBoard()
-    app.protocol("WM_DELETE_WINDOW", app.on_close)  # Handle window close event
-    app.mainloop()
+        self.pack_forget()  # Hide the management board
+        self.parent.show_login_page()  # Navigate back to login page

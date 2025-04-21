@@ -2,25 +2,25 @@ import os
 import tempfile
 import customtkinter as ctk
 from PIL import Image, ImageTk
-from tkinter import filedialog, messagebox
+from tkinter import filedialog, messagebox, StringVar
 from ui.styles import ACCENT_COLOR, TEXT_COLOR, FOCUS_COLOR, BACKGROUND_COLOR
 from functions import register
+import re
 
 
 class LeftPanel:
     def __init__(self, parent):
+        self.post_entry = None
         self.parent = parent
 
-        # Initialize UI components
-        self.frame = ctk.CTkFrame(parent, width=350, corner_radius=10)
+        self.frame = ctk.CTkFrame(parent, corner_radius=10)
         self.frame.grid(row=0, column=0, sticky="nswe", padx=10, pady=10)
 
-        # Initialize instance attributes
-        self.temp_image_path = None  # Store the path to the temporary image file
-        self.photo = None  # Store the thumbnail for display
+        self.temp_image_path = None
+        self.photo = None
         self.submit_button = None
         self.image_label = None
-        self.post_entry = None
+        self.post_var = StringVar()
         self.password_entry = None
         self.email_entry = None
         self.phone_entry = None
@@ -29,8 +29,6 @@ class LeftPanel:
         self.create_widgets()
 
     def create_widgets(self):
-        """Create widgets for the left panel."""
-        # Header Frame
         header_frame = ctk.CTkFrame(self.frame, corner_radius=10, fg_color=BACKGROUND_COLOR)
         header_frame.pack(fill="x", padx=10, pady=(10, 0))
 
@@ -41,7 +39,6 @@ class LeftPanel:
             text_color=ACCENT_COLOR,
         ).pack(side="left", padx=10, pady=10)
 
-        # Clear All Button
         clear_button = ctk.CTkButton(
             header_frame,
             text="✖",
@@ -54,14 +51,21 @@ class LeftPanel:
         )
         clear_button.pack(side="right", padx=5, pady=5)
 
-        # Entry Fields
         self.name_entry = self.create_entry("Name")
-        self.phone_entry = self.create_entry("Phone")
-        self.email_entry = self.create_entry("Email")
-        self.password_entry = self.create_entry("Password", show="*")
-        self.post_entry = self.create_entry("Post")
+        self.phone_entry = self.create_entry("Phone", validate_command=self.validate_phone)
+        self.email_entry = self.create_entry("Email", validate_command=self.validate_email)
+        self.password_entry = self.create_entry("Password")
 
-        # Image Upload
+        self.post_entry = ctk.CTkComboBox(
+            self.frame,
+            values=["Operator", "Supervisor"],
+            variable=self.post_var,
+            width=300,
+            height=40,
+            corner_radius=10,
+        )
+        self.post_entry.pack(pady=10)
+
         self.image_label = ctk.CTkLabel(self.frame, text="No image selected", text_color=TEXT_COLOR)
         self.image_label.pack(pady=5)
 
@@ -74,7 +78,6 @@ class LeftPanel:
         )
         upload_button.pack(pady=5)
 
-        # Submit Button
         self.submit_button = ctk.CTkButton(
             self.frame,
             text="Register",
@@ -88,8 +91,7 @@ class LeftPanel:
         )
         self.submit_button.pack(pady=20)
 
-    def create_entry(self, placeholder, **kwargs):
-        """Create and return an entry field."""
+    def create_entry(self, placeholder, validate_command=None):
         entry = ctk.CTkEntry(
             self.frame,
             placeholder_text=placeholder,
@@ -97,10 +99,27 @@ class LeftPanel:
             height=40,
             border_width=2,
             corner_radius=10,
-            **kwargs,
         )
+
+        if validate_command:  # If a validation function is provided, bind it to `<FocusOut>`
+            entry.bind("<FocusOut>", lambda event: validate_command())
+
         entry.pack(pady=10)
         return entry
+
+    def validate_phone(self):
+        phone = self.phone_entry.get()
+        if not re.fullmatch(r"\d{9}", phone):
+            messagebox.showerror("Error", "Phone number must be exactly 9 digits.")
+            return False
+        return True
+
+    def validate_email(self):
+        email = self.email_entry.get()
+        if not re.fullmatch(r"[^@]+@[^@]+\.[^@]+", email):
+            messagebox.showerror("Error", "Invalid email format.")
+            return False
+        return True
 
     def upload_image(self):
         """Handle image upload and preview without reducing quality."""
@@ -155,20 +174,18 @@ class LeftPanel:
             messagebox.showerror("Error", f"An unexpected error occurred: {e}")
 
     def register_operator(self):
-        """Register a new operator."""
         try:
-            # Read the temporary image file as binary data
+            if not self.validate_phone() or not self.validate_email():
+                return
+
             if register(
-                name=self.name_entry.get(),
-                phone=self.phone_entry.get(),
-                email=self.email_entry.get(),
-                password=self.password_entry.get(),
-                post=self.post_entry.get(),
-                profile=(
-                        self.temp_image_path
-                        if self.temp_image_path is not None and os.path.exists(self.temp_image_path)
-                        else None
-                )
+                    name=self.name_entry.get(),
+                    phone=self.phone_entry.get(),
+                    email=self.email_entry.get(),
+                    password=self.password_entry.get(),
+                    post=self.post_var.get(),
+                    profile=self.temp_image_path if self.temp_image_path and os.path.exists(
+                        self.temp_image_path) else None
             ):
                 messagebox.showinfo("Success", "Operator registered successfully")
                 self.clear_all_fields()
@@ -178,20 +195,13 @@ class LeftPanel:
             messagebox.showerror("Error", f"Registration failed: {e}")
 
     def clear_all_fields(self):
-        """Clear all input fields and delete the temporary image file."""
         self.name_entry.delete(0, "end")
         self.phone_entry.delete(0, "end")
         self.email_entry.delete(0, "end")
         self.password_entry.delete(0, "end")
-        self.post_entry.delete(0, "end")
+        self.post_var.set("")
         self.image_label.configure(image="", text="No image selected")
 
-        # Delete the temporary image file if it exists
         if self.temp_image_path and os.path.exists(self.temp_image_path):
             os.remove(self.temp_image_path)
             self.temp_image_path = None
-
-    def cleanup_temp_files(self):
-        """Clean up temporary files when the application exits."""
-        if self.temp_image_path and os.path.exists(self.temp_image_path):
-            os.remove(self.temp_image_path)

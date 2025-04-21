@@ -2,6 +2,7 @@ import os
 import uuid
 import tempfile
 from database import session
+from tkinter import messagebox
 from recognition.compare import compare_face
 from datetime import timedelta, datetime, date
 from recognition.functions import upload_profile
@@ -46,7 +47,7 @@ def register(name: str, phone: str, email: str, password: str, post: str, profil
     session.add_all([operator, profile])
     session.commit()
 
-    print(f"Created the operator {operator.to_dict()} and their profile {profile.to_dict()}")
+    messagebox.showinfo("Info", f"Created the operator {operator.to_dict()} and their profile {profile.to_dict()}")
     return True
 
 
@@ -80,7 +81,7 @@ def arrived(profile) -> None:
         ).first()
 
         if existing_arrival:
-            print(f"Operator {operator_id} has already registered an arrival today.")
+            messagebox.showinfo("Info", f"Operator {operator_id} has already registered an arrival today.")
             return
 
         # Register arrival time
@@ -88,9 +89,9 @@ def arrived(profile) -> None:
         session.add(arrival)
         session.commit()
 
-        print(f"The operator {operator_id} arrived at {arrival.to_dict()}")
+        messagebox.showinfo("Info", f"The operator {operator_id} arrived at {arrival.datestamp}")
     else:
-        print("Face not recognized. Who are you?")
+        messagebox.showinfo("Info", "Face not recognized. Who are you?")
 
 
 def departed(profile) -> None:
@@ -123,7 +124,7 @@ def departed(profile) -> None:
         ).first()
 
         if existing_departure:
-            print(f"Operator {operator_id} has already registered a departure today.")
+            messagebox.showinfo("Info", f"Operator {operator_id} has already registered a departure today.")
             return
 
         # Register departure time
@@ -131,9 +132,9 @@ def departed(profile) -> None:
         session.add(departure)
         session.commit()
 
-        print(f"The operator {operator_id} departed at {departure.to_dict()}")
+        messagebox.showinfo("Info", f"The operator {operator_id} departed at {departure.to_dict()}")
     else:
-        print("Face not recognized. Who are you?")
+        messagebox.showinfo("Info", "Face not recognized. Who are you?")
 
 
 def assiduity(operator_id: str) -> dict:

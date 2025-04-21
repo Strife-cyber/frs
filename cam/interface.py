@@ -1,92 +1,76 @@
 import tkinter as tk
+import customtkinter as ctk
 from tkinter import messagebox
 from cam.single import SinglePictureCapture  # Import your class from the file
 
 
 class CaptureInterface:
     """
-    A graphical interface to capture a picture for arrival or departure.
+    A graphical interface to automatically capture a picture when a face is detected.
     """
 
-    def __init__(self):
-        self.window = tk.Tk()
-        self.window.title("Picture Capture")
-        self.window.geometry("400x200")
-        self.window.configure(bg="lightblue")
+    def __init__(self, parent_frame):
+        self.frame = parent_frame
 
         # Title label
         title_label = tk.Label(
-            self.window,
-            text="Capture a Picture",
-            font=("Arial", 18, "bold"),
-            bg="lightblue"
+            self.frame,
+            text="Face Capture System",
+            font=("Helvetica", 20, "bold"),
+            fg="#f0f0f0",
+            bg="#2e2e2e"
         )
-        title_label.pack(pady=10)
+        title_label.pack(pady=20)
 
-        # Button frame
-        button_frame = tk.Frame(self.window, bg="lightblue")
-        button_frame.pack(pady=20)
-
-        # Arrival button
-        arrival_button = tk.Button(
-            button_frame,
-            text="Arrival",
-            font=("Arial", 14),
-            bg="green",
-            fg="white",
-            width=10,
-            command=lambda: self.start_capture(arrive=True)
+        # Capture button
+        capture_button = ctk.CTkButton(
+            self.frame,
+            text="Start Capture",
+            font=("Helvetica", 14),
+            fg_color="#4CAF50",
+            hover_color="#45a049",
+            width=200,
+            height=50,
+            command=self.start_capture
         )
-        arrival_button.grid(row=0, column=0, padx=10)
-
-        # Departure button
-        departure_button = tk.Button(
-            button_frame,
-            text="Departure",
-            font=("Arial", 14),
-            bg="red",
-            fg="white",
-            width=10,
-            command=lambda: self.start_capture(arrive=False)
-        )
-        departure_button.grid(row=0, column=1, padx=10)
+        capture_button.pack(pady=30)
 
         # Exit button
-        exit_button = tk.Button(
-            self.window,
+        exit_button = ctk.CTkButton(
+            self.frame,
             text="Exit",
-            font=("Arial", 12),
-            bg="gray",
-            fg="white",
-            width=8,
-            command=self.window.quit
+            font=("Helvetica", 12),
+            fg_color="#757575",
+            hover_color="#616161",
+            width=150,
+            height=40,
+            command=self.frame.quit
         )
-        exit_button.pack(pady=10)
+        exit_button.pack(pady=20)
 
     @staticmethod
-    def start_capture(arrive: bool):
+    def start_capture():
         """
-        Start the picture capture process for arrival or departure.
-
-        :param arrive: True if arrival, False if departure.
+        Start the picture capture process and automatically stop once a face is detected.
         """
-        action = "Arrival" if arrive else "Departure"
-        messagebox.showinfo("Starting Capture", f"Starting {action} capture...")
         capturer = SinglePictureCapture()
-        try:
-            capturer.run(arrive)
-            messagebox.showinfo("Success", f"{action} capture and processing completed!")
-        except Exception as e:
-            messagebox.showerror("Error", f"An error occurred: {e}")
 
-    def run(self):
-        """
-        Run the interface.
-        """
-        self.window.mainloop()
+        try:
+            capturer.run(arrive=True)  # Assuming `run` returns a result indicating if a face was found
+        except Exception as e:
+            messagebox.showinfo(title="Error", message=f"An error occurred: {e}", icon="error")
 
 
 # Run the GUI
 if __name__ == "__main__":
-    app = CaptureInterface()
-    app.run()
+    ctk.set_appearance_mode("dark")
+    window = ctk.CTk()
+    window.title("Capture Interface")
+    window.geometry("400x300")
+
+    frame = ctk.CTkFrame(window)
+    frame.pack(fill=tk.BOTH, expand=True)
+
+    app = CaptureInterface(frame)
+
+    window.mainloop()
