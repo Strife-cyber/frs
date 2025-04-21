@@ -1,8 +1,31 @@
 from flask import Flask, request, jsonify
 from sqlalchemy.exc import IntegrityError
-from functions import register, arrived, departed, assiduity, everyone, someone, arrivals, departures
+from functions import register, arrived, departed, assiduity, everyone, someone, arrivals, departures, update
 
 app = Flask(__name__)
+
+@app.route("/update", methods=["POST"])
+def api_update():
+    data = request.form
+    profile = request.files.get("profile")
+
+    if not all(k in data for k in ('name', 'phone', 'email', 'password', 'post')) or not profile:
+        return jsonify({"error": "Missing required fields"}), 400
+
+    try:
+        success = update(
+            name=data['name'],
+            phone=data['phone'],
+            email=data['email'],
+            password=data['password'],
+            post=data['post'],
+            profile=profile.read()
+        )
+        return jsonify({"success": success}), 201
+    except IntegrityError:
+        return jsonify({"error": "Operator already exists"}), 409
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/register', methods=['POST'])
 def api_register():
